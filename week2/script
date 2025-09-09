@@ -1,0 +1,59 @@
+let movies = [];
+
+// Load movies from JSON
+fetch('movies.json')
+  .then(response => response.json())
+  .then(data => {
+    movies = data;
+    populateGenres();
+  });
+
+function populateGenres() {
+  const genresSet = new Set();
+  movies.forEach(movie => {
+    if (movie.genres) {
+      try {
+        const genres = JSON.parse(movie.genres);
+        genres.forEach(g => genresSet.add(g.name));
+      } catch(e) { /* handle malformed JSON */ }
+    }
+  });
+
+  const select = document.getElementById('genreSelect');
+  [...genresSet].sort().forEach(genre => {
+    const option = document.createElement('option');
+    option.value = genre;
+    option.textContent = genre;
+    select.appendChild(option);
+  });
+
+  select.addEventListener('change', showMovies);
+}
+
+function showMovies() {
+  const selectedGenre = this.value;
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
+
+  if (!selectedGenre) return;
+
+  const filtered = movies.filter(movie => {
+    try {
+      const genres = JSON.parse(movie.genres);
+      return genres.some(g => g.name === selectedGenre);
+    } catch(e) {
+      return false;
+    }
+  });
+
+  filtered.slice(0, 10).forEach(movie => {
+    const div = document.createElement('div');
+    div.className = 'movie-card';
+    div.innerHTML = `
+      <h3>${movie.title}</h3>
+      <p>⭐ ${movie.vote_average}</p>
+      <p>${movie.overview?.substring(0, 100)}...</p>
+    `;
+    resultsDiv.appendChild(div);
+  });
+}
